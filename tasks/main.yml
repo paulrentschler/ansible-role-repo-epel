@@ -1,0 +1,42 @@
+---
+# Install the EPEL repo
+
+
+- name: check if the EPEL repo is already configured
+  ansible.builtin.stat:
+    path: "{{ epel_repofile_path }}"
+  register: _epel_repofile_result
+
+- name: import the EPEL GPG key
+  ansible.builtin.rpm_key:
+    key: "{{ epel_repo_gpg_key_url }}"
+    state: present
+  register: _result_gpg
+  until: _result_gpg is successful
+  retries: 5
+  delay: 10
+  when: not _epel_repofile_result.stat.exists
+  become: yes
+  ignore_errors: "{{ ansible_check_mode }}"
+
+- name: install EPEL repo
+  ansible.builtin.yum:
+    name: "{{ epel_repo_url }}"
+    state: present
+  register: _result_repo
+  until: _result_repo is successful
+  retries: 5
+  delay: 10
+  when: not _epel_repofile_result.stat.exists
+  become: yes
+
+- name: disable the main EPEL repo
+  ansible.builtin.ini_file:
+    path: "{{ epel_repofile_path }}"
+    section: epel
+    option: enabled
+    value: "{{ epel_repo_disable|ternary(0, 1) }}"
+    no_extra_spaces: yes
+    mode: 0644
+  become: yes
+
