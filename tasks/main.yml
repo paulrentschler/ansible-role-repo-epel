@@ -20,7 +20,7 @@
   ignore_errors: "{{ ansible_check_mode }}"
 
 - name: install EPEL repo
-  ansible.builtin.yum:
+  ansible.builtin.dnf:
     name: "{{ epel_repo_url }}"
     state: present
   register: _result_repo
